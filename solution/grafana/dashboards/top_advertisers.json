@@ -1,0 +1,384 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 3,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "PCC52D03280B7034C"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "displayMode": "basic",
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "maxVizHeight": 300,
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "namePlacement": "left",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": true
+        },
+        "showUnfilled": true,
+        "sizing": "auto",
+        "valueMode": "color"
+      },
+      "pluginVersion": "11.5.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "PCC52D03280B7034C"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH\r\n  spent_impressions AS\r\n  (\r\n    SELECT campaign_id, sum(profit) AS spent_total FROM impressions GROUP BY campaign_id\r\n  ),\r\n  spent_clicks AS\r\n  (\r\n    SELECT campaign_id, sum(profit) AS spent_total FROM clicks GROUP BY campaign_id\r\n  ),\r\n  advertisers_stats AS\r\n  (\r\n    SELECT\r\n      advertiser_id,\r\n      sum(coalesce(spent_impressions.spent_total, 0) + coalesce(spent_clicks.spent_total, 0)) AS spent_total\r\n    FROM campaigns\r\n    LEFT JOIN spent_impressions ON spent_impressions.campaign_id = campaigns.id\r\n    LEFT JOIN spent_clicks ON spent_clicks.campaign_id = campaigns.id\r\n    GROUP BY advertiser_id\r\n  )\r\nSELECT\r\n  advertisers.name AS \"name\",\r\n  coalesce(advertisers_stats.spent_total, 0) AS \"spent total\"\r\nFROM advertisers\r\nLEFT JOIN advertisers_stats ON advertisers_stats.advertiser_id = advertisers.id\r\nORDER BY coalesce(advertisers_stats.spent_total, 0) DESC\r\nLIMIT 10",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "top total spent",
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "PCC52D03280B7034C"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 12
+      },
+      "id": 4,
+      "options": {
+        "displayMode": "basic",
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "maxVizHeight": 300,
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "namePlacement": "left",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": true
+        },
+        "showUnfilled": true,
+        "sizing": "auto",
+        "valueMode": "color"
+      },
+      "pluginVersion": "11.5.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "PCC52D03280B7034C"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH\r\n  impressions_count AS\r\n  (\r\n    SELECT campaign_id, count(*) AS total_count FROM impressions GROUP BY campaign_id\r\n  ),\r\n  clicks_count AS\r\n  (\r\n    SELECT campaign_id, count(*) AS total_count FROM clicks GROUP BY campaign_id\r\n  ),\r\n  advertisers_stats AS\r\n  (\r\n    SELECT\r\n      campaigns.advertiser_id AS advertiser_id,\r\n      sum(coalesce(impressions_count.total_count, 0)) AS total_impressions,\r\n      sum(coalesce(clicks_count.total_count, 0)) AS total_clicks\r\n    FROM campaigns\r\n    LEFT JOIN impressions_count ON impressions_count.campaign_id = campaigns.id\r\n    LEFT JOIN clicks_count ON clicks_count.campaign_id = campaigns.id\r\n    GROUP BY campaigns.advertiser_id\r\n  ),\r\n  advertisers_stats_with_conversion AS\r\n  (\r\n    SELECT\r\n      advertiser_id,\r\n      CASE\r\n        WHEN coalesce(advertisers_stats.total_impressions, 0) != 0\r\n          THEN ROUND((coalesce(advertisers_stats.total_clicks, 0)::double precision / coalesce(advertisers_stats.total_impressions, 0)::double precision)::numeric, 2) * 100\r\n        ELSE\r\n          0\r\n      END AS conversion\r\n    FROM advertisers_stats\r\n  )\r\nSELECT\r\n  advertisers.name AS \"name\",\r\n  coalesce(conversion, 0) AS \"conversion\"\r\nFROM advertisers\r\nLEFT JOIN advertisers_stats_with_conversion ON advertisers_stats_with_conversion.advertiser_id = advertisers.id\r\nORDER BY coalesce(conversion, 0) DESC\r\nLIMIT 10",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "top conversion",
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "PCC52D03280B7034C"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 24
+      },
+      "id": 2,
+      "options": {
+        "displayMode": "basic",
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "maxVizHeight": 300,
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "namePlacement": "left",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": true
+        },
+        "showUnfilled": true,
+        "sizing": "auto",
+        "valueMode": "color"
+      },
+      "pluginVersion": "11.5.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "PCC52D03280B7034C"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH\r\n  impressions_count AS\r\n  (\r\n    SELECT campaign_id, count(*) AS total_count FROM impressions GROUP BY campaign_id\r\n  ),\r\n  advertisers_stats AS\r\n  (\r\n    SELECT\r\n      campaigns.advertiser_id AS advertiser_id,\r\n      sum(coalesce(impressions_count.total_count, 0)) AS total_impressions\r\n    FROM campaigns\r\n    LEFT JOIN impressions_count ON impressions_count.campaign_id = campaigns.id\r\n    GROUP BY campaigns.advertiser_id\r\n  )\r\nSELECT\r\n  advertisers.name AS \"name\",\r\n  coalesce(advertisers_stats.total_impressions, 0) AS \"total impressions\"\r\nFROM advertisers\r\nLEFT JOIN advertisers_stats ON advertisers_stats.advertiser_id = advertisers.id\r\nORDER BY coalesce(advertisers_stats.total_impressions, 0) DESC\r\nLIMIT 10",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "top total impressions",
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "PCC52D03280B7034C"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 24
+      },
+      "id": 3,
+      "options": {
+        "displayMode": "basic",
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "maxVizHeight": 300,
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "namePlacement": "left",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": true
+        },
+        "showUnfilled": true,
+        "sizing": "auto",
+        "valueMode": "color"
+      },
+      "pluginVersion": "11.5.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "PCC52D03280B7034C"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH\r\n  clicks_count AS\r\n  (\r\n    SELECT campaign_id, count(*) AS total_count FROM clicks GROUP BY campaign_id\r\n  ),\r\n  advertisers_stats AS\r\n  (\r\n    SELECT\r\n      campaigns.advertiser_id AS advertiser_id,\r\n      sum(coalesce(clicks_count.total_count, 0)) AS total_clicks\r\n    FROM campaigns\r\n    LEFT JOIN clicks_count ON clicks_count.campaign_id = campaigns.id\r\n    GROUP BY campaigns.advertiser_id\r\n  )\r\nSELECT\r\n  advertisers.name AS \"name\",\r\n  coalesce(advertisers_stats.total_clicks, 0) AS \"total clicks\"\r\nFROM advertisers\r\nLEFT JOIN advertisers_stats ON advertisers_stats.advertiser_id = advertisers.id\r\nORDER BY coalesce(advertisers_stats.total_clicks, 0) DESC\r\nLIMIT 10",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "top total clicks",
+      "type": "bargauge"
+    }
+  ],
+  "preload": false,
+  "refresh": "",
+  "schemaVersion": 40,
+  "tags": [],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "top advertisers",
+  "uid": "eedj43ydkvk74dd",
+  "version": 1,
+  "weekStart": ""
+}

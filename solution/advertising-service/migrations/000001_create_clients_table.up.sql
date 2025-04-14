@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS clients (
+    id UUID PRIMARY KEY,
+    login TEXT NOT NULL,
+    age INTEGER NOT NULL,
+    location TEXT NOT NULL,
+    gender VARCHAR(31) NOT NULL
+);

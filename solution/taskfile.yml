@@ -1,0 +1,18 @@
+version: "3"
+
+tasks:
+  gen-api:
+    cmds:
+      - go run github.com/ogen-go/ogen/cmd/ogen@latest --target pkg/ogen/advertising-service --clean api/advertising-service.yml
+  test-e2e:
+    cmds:
+      - go clean -testcache
+      # - docker build -t advertising-service:e2e -f docker/advertising-service.Dockerfile .
+      - go test ./tests/e2e/... {{.CLI_ARGS}}
+  test-unit-advertising-service:
+    cmds:
+      - go clean -testcache
+      - go test ./advertising-service/internal/... {{.CLI_ARGS}}
+  run-infr:
+    cmds:
+      - docker-compose up -d postgres migrate redis minio createbucket
